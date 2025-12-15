@@ -238,6 +238,14 @@ exports.about = catchAsync(async (req, res, next) => {
         );
       }
 
+      const { error } = await supabase
+        .from('publish')
+        .insert({ user_id: req.user.id });
+
+      if (error) {
+        return next(new AppError(error.message, 400));
+      }
+
       return res.status(200).json({ status: 'success', data: insertedAbout });
     }
   }
@@ -868,6 +876,25 @@ const profileImageUpload = multer({
         false
       );
   }
+});
+
+exports.publish = catchAsync(async (req, res, next) => {
+  const { publish } = req.body;
+
+  const { error } = await supabase
+    .from('publish')
+    .update({ ispublished: publish })
+    .eq('user_id', req.user.id);
+
+  if (error) {
+    return next(
+      new AppError(error.message || 'Porfolio Can not be published.', 400)
+    );
+  }
+
+  res.status(204).json({
+    status: 'success'
+  });
 });
 
 // Export middleware that accepts both resume and profileImage fields
