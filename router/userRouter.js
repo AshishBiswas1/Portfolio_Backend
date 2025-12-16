@@ -11,6 +11,9 @@ router.route('/login').post(authController.login);
 // Public: send a message (contact form)
 router.route('/messages').post(messageController.sendMessage);
 
+// Public: get published portfolio by username
+router.route('/portfolio/:username').get(userController.getPublicPortfolio);
+
 router.use(authController.protect, authController.restrictTo('user-admin'));
 
 router.route('/Me').get(userController.getMe);
@@ -24,6 +27,9 @@ router
 router.route('/experience').post(userController.experience);
 
 router.route('/portfolio').get(userController.getPortfolio);
+
+// Toggle publish status
+router.route('/publish').post(userController.togglePublish);
 
 // Protected: fetch received messages
 router.route('/messages').get(messageController.getMessages);

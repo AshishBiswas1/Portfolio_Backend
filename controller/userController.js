@@ -103,7 +103,7 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
 });
 
 exports.about = catchAsync(async (req, res, next) => {
-  const { name, description } = req.body;
+  const { name, description, designation } = req.body;
 
   // Handle resume and profile image uploads separately
   let resumeUrl = null;
@@ -183,6 +183,7 @@ exports.about = catchAsync(async (req, res, next) => {
     if (description) upsertPayload.description = description;
     if (resumeUrl) upsertPayload.resume_url = resumeUrl;
     if (profileImageUrl) upsertPayload.profile_image = profileImageUrl;
+    if (designation) upsertPayload.designation = designation;
 
     if (Object.keys(upsertPayload).length > 1) {
       // Find existing about row
@@ -835,10 +836,178 @@ exports.getPortfolio = catchAsync(async (req, res, next) => {
   }
   results.skills = skillsData || [];
 
+  // Check if portfolio is published from publish table
+  const { data: publishData, error: publishErr } = await supabase
+    .from('publish')
+    .select('ispublished')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  results.is_published = publishData?.ispublished || false;
+
+  // Get username from users table
+  const { data: userData, error: userErr } = await supabase
+    .from('users')
+    .select('email')
+    .eq('id', userId)
+    .maybeSingle();
+
+  // Use email as username (or you can add a separate username field to users table)
+  results.username = userData?.email?.split('@')[0] || userId;
+
   // Clean null values from results
   const cleaned = removeNulls(results);
 
   res.status(200).json({ status: 'success', data: cleaned });
+});
+
+// Public route to get portfolio by username
+exports.getPublicPortfolio = catchAsync(async (req, res, next) => {
+  const { username } = req.params;
+
+  if (!username) {
+    return next(new AppError('Username is required', 400));
+  }
+
+  // Find user by email prefix (username)
+  const { data: usersData, error: userErr } = await supabase
+    .from('users')
+    .select('id, email')
+    .ilike('email', `${username}@%`);
+
+  if (userErr || !usersData || usersData.length === 0) {
+    return next(new AppError('Portfolio not found', 404));
+  }
+
+  const userData = usersData[0];
+  const userId = userData.id;
+
+  // Check if portfolio is published
+  const { data: publishData, error: publishErr } = await supabase
+    .from('publish')
+    .select('ispublished')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (publishErr || !publishData || !publishData.ispublished) {
+    return next(new AppError('This portfolio is not published', 403));
+  }
+
+  // Helper to recursively remove keys with null or undefined values
+  const removeNulls = val => {
+    if (val === null || val === undefined) return null;
+    if (Array.isArray(val)) {
+      return val
+        .map(v => removeNulls(v))
+        .filter(v => v !== null && v !== undefined);
+    }
+    if (typeof val === 'object') {
+      const out = {};
+      Object.keys(val).forEach(k => {
+        const v = removeNulls(val[k]);
+        if (v !== null && v !== undefined) out[k] = v;
+      });
+      return out;
+    }
+    return val;
+  };
+
+  const results = {};
+
+  // Fetch all portfolio data
+  const { data: aboutData } = await supabase
+    .from('about')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+  results.about = aboutData || null;
+
+  const { data: blogsData } = await supabase
+    .from('blogs')
+    .select('*')
+    .eq('user_id', userId);
+  results.blogs = blogsData || [];
+
+  const { data: expData } = await supabase
+    .from('experience')
+    .select('*')
+    .eq('user_id', userId);
+  results.experience = expData || [];
+
+  const { data: projectsData } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('user_id', userId);
+  results.projects = projectsData || [];
+
+  const { data: servicesData } = await supabase
+    .from('services')
+    .select('*')
+    .eq('user_id', userId);
+  results.services = servicesData || [];
+
+  const { data: skillsData } = await supabase
+    .from('skills')
+    .select('*')
+    .eq('user_id', userId);
+  results.skills = skillsData || [];
+
+  const cleaned = removeNulls(results);
+
+  res.status(200).json({ status: 'success', data: cleaned });
+});
+
+// Toggle publish status
+exports.togglePublish = catchAsync(async (req, res, next) => {
+  if (!req.user || !req.user.id) {
+    return next(new AppError('User authentication required', 401));
+  }
+
+  const userId = req.user.id;
+
+  // Get current publish status from publish table
+  const { data: currentData, error: fetchErr } = await supabase
+    .from('publish')
+    .select('ispublished')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (fetchErr) {
+    return next(new AppError('Could not fetch publish status', 500));
+  }
+
+  const newPublishStatus = !(currentData?.ispublished || false);
+
+  // Update or insert publish status
+  if (currentData) {
+    // Update existing record
+    const { error: updateErr } = await supabase
+      .from('publish')
+      .update({
+        ispublished: newPublishStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId);
+
+    if (updateErr) {
+      return next(new AppError('Could not update publish status', 500));
+    }
+  } else {
+    // Insert new record
+    const { error: insertErr } = await supabase.from('publish').insert({
+      user_id: userId,
+      ispublished: newPublishStatus
+    });
+
+    if (insertErr) {
+      return next(new AppError('Could not create publish status', 500));
+    }
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data: { is_published: newPublishStatus }
+  });
 });
 
 // --------------------------
