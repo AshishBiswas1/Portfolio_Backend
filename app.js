@@ -15,7 +15,8 @@ const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
       'http://localhost:5173',
-      'https://portfolio-backend-n2d0.onrender.com'
+      'https://portfolio-backend-n2d0.onrender.com',
+      'https://portfolio-frontend-eta-brown.vercel.app'
     ];
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
