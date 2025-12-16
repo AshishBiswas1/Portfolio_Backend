@@ -274,8 +274,7 @@ exports.experience = catchAsync(async (req, res, next) => {
     is_current,
     description,
     responsibilities,
-    technologies,
-    company_logo
+    technologies
   } = req.body;
 
   if (!req.user || !req.user.id) {
