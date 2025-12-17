@@ -1083,6 +1083,98 @@ exports.publish = catchAsync(async (req, res, next) => {
   });
 });
 
+// Get portfolio by user ID (public route, no authentication required)
+exports.getPortfolioByUserId = catchAsync(async (req, res, next) => {
+  const { userId } = req.params;
+
+  console.log('Fetching portfolio for user ID:', userId);
+
+  // Verify user exists
+  const { data: user, error: userError } = await supabase
+    .from('users')
+    .select('id, name, email')
+    .eq('id', userId)
+    .single();
+
+  if (userError) {
+    console.error('User query error:', userError);
+  }
+  console.log('User query result:', user);
+
+  if (userError || !user) {
+    return next(
+      new AppError(
+        `User not found: ${userError?.message || 'No user data'}`,
+        404
+      )
+    );
+  }
+
+  // Check if portfolio is published (optional - remove if you want to always show)
+  const { data: publishData } = await supabase
+    .from('publish')
+    .select('ispublished')
+    .eq('user_id', userId)
+    .single();
+
+  // Fetch all portfolio data
+  const [
+    aboutResult,
+    blogsResult,
+    experienceResult,
+    projectsResult,
+    servicesResult,
+    skillsResult
+  ] = await Promise.all([
+    supabase.from('about').select('*').eq('user_id', userId),
+    supabase
+      .from('blogs')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('experience')
+      .select('*')
+      .eq('user_id', userId)
+      .order('start_date', { ascending: false }),
+    supabase
+      .from('projects')
+      .select('*')
+      .eq('user_id', userId)
+      .order('order_index', { ascending: true }),
+    supabase
+      .from('services')
+      .select('*')
+      .eq('user_id', userId)
+      .order('order_index', { ascending: true }),
+    supabase
+      .from('skills')
+      .select('*')
+      .eq('user_id', userId)
+      .order('order_index', { ascending: true })
+  ]);
+
+  const portfolio = {
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email
+    },
+    isPublished: publishData?.ispublished || false,
+    about: aboutResult.data?.[0] || null,
+    blogs: blogsResult.data || [],
+    experience: experienceResult.data || [],
+    projects: projectsResult.data || [],
+    services: servicesResult.data || [],
+    skills: skillsResult.data || []
+  };
+
+  res.status(200).json({
+    status: 'success',
+    data: portfolio
+  });
+});
+
 // Export middleware that accepts both resume and profileImage fields
 exports.uploadMiddleware = multer({
   storage: multer.memoryStorage(),

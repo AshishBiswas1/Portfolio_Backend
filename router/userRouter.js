@@ -14,6 +14,11 @@ router.route('/messages').post(messageController.sendMessage);
 // Public: get published portfolio by username
 router.route('/portfolio/:username').get(userController.getPublicPortfolio);
 
+// Public: get portfolio by user ID (for direct user ID access)
+router
+  .route('/portfolio/user/:userId')
+  .get(userController.getPortfolioByUserId);
+
 router.use(authController.protect, authController.restrictTo('user-admin'));
 
 router.route('/Me').get(userController.getMe);
