@@ -18,7 +18,7 @@ router
   .route('/blogs/:id')
   .patch(userController.uploadCoverMiddleware, updateController.updateBlog);
 
-// Experience: allow profileImage to be used as company_logo
+// Experience
 router
   .route('/experience/:id')
   .patch(userController.uploadMiddleware, updateController.updateExperience);

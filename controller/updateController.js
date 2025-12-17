@@ -232,16 +232,6 @@ exports.updateExperience = catchAsync(async (req, res, next) => {
   const tech = normalizeArray(technologies);
   if (tech) payload.technologies = tech;
 
-  // company logo: allow file via profileImage or text URL via company_logo
-  if (req.files && req.files.profileImage && req.files.profileImage[0]) {
-    payload.company_logo = await uploadFile(
-      req.files.profileImage[0],
-      `experience/logo-${req.user.id}`
-    );
-  } else if (req.body.company_logo) {
-    payload.company_logo = req.body.company_logo;
-  }
-
   if (Object.keys(payload).length === 0)
     return res
       .status(200)

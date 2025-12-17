@@ -321,9 +321,6 @@ exports.experience = catchAsync(async (req, res, next) => {
   const tech = normalizeArray(technologies);
   if (tech) experienceData.technologies = tech;
 
-  // Accept company_logo (can be a URL or data URL). Store as text.
-  if (company_logo) experienceData.company_logo = company_logo;
-
   const { data, error } = await supabase
     .from('experience')
     .insert(experienceData)
