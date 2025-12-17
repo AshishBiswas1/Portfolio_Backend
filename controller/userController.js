@@ -806,7 +806,8 @@ exports.getPortfolio = catchAsync(async (req, res, next) => {
   const { data: projectsData, error: projectsErr } = await supabase
     .from('projects')
     .select('*')
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .eq('featured', true);
   if (projectsErr) {
     console.error('Projects fetch error:', projectsErr);
     return next(new AppError('Could not fetch projects data', 500));
