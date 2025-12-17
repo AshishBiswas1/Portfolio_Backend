@@ -860,6 +860,26 @@ exports.getPortfolio = catchAsync(async (req, res, next) => {
   res.status(200).json({ status: 'success', data: cleaned });
 });
 
+// Get all projects for the authenticated user (including non-featured)
+exports.getAllProjects = catchAsync(async (req, res, next) => {
+  if (!req.user || !req.user.id)
+    return next(new AppError('User authentication required', 401));
+  const userId = req.user.id;
+
+  const { data: projectsData, error: projectsErr } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('user_id', userId)
+    .order('order_index', { ascending: true });
+
+  if (projectsErr) {
+    console.error('Projects fetch error:', projectsErr);
+    return next(new AppError('Could not fetch projects data', 500));
+  }
+
+  res.status(200).json({ status: 'success', data: projectsData || [] });
+});
+
 // Public route to get portfolio by username
 exports.getPublicPortfolio = catchAsync(async (req, res, next) => {
   const { username } = req.params;

@@ -28,6 +28,9 @@ router.route('/experience').post(userController.experience);
 
 router.route('/portfolio').get(userController.getPortfolio);
 
+// Get all projects (including non-featured) for editing
+router.route('/projects').get(userController.getAllProjects);
+
 // Toggle publish status
 router.route('/publish').post(userController.togglePublish);
 
