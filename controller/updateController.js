@@ -130,7 +130,8 @@ exports.updateBlog = catchAsync(async (req, res, next) => {
     author,
     tags,
     published,
-    published_at
+    published_at,
+    featured
   } = req.body;
 
   const payload = {};
@@ -148,6 +149,12 @@ exports.updateBlog = catchAsync(async (req, res, next) => {
       published === '1' ||
       published === 1;
   if (published_at !== undefined) payload.published_at = published_at || null;
+  if (featured !== undefined)
+    payload.featured =
+      featured === true ||
+      featured === 'true' ||
+      featured === '1' ||
+      featured === 1;
 
   // cover image
   let imageFile = null;
@@ -208,7 +215,8 @@ exports.updateExperience = catchAsync(async (req, res, next) => {
     is_current,
     description,
     responsibilities,
-    technologies
+    technologies,
+    featured
   } = req.body;
 
   const payload = {};
@@ -231,6 +239,12 @@ exports.updateExperience = catchAsync(async (req, res, next) => {
   if (resp) payload.responsibilities = resp;
   const tech = normalizeArray(technologies);
   if (tech) payload.technologies = tech;
+  if (featured !== undefined)
+    payload.featured =
+      featured === true ||
+      featured === 'true' ||
+      featured === '1' ||
+      featured === 1;
 
   if (Object.keys(payload).length === 0)
     return res
@@ -349,8 +363,15 @@ exports.updateService = catchAsync(async (req, res, next) => {
   if (existing.user_id !== req.user.id)
     return next(new AppError('Forbidden', 403));
 
-  const { title, description, features, price_range, active, order_index } =
-    req.body;
+  const {
+    title,
+    description,
+    features,
+    price_range,
+    active,
+    featured,
+    order_index
+  } = req.body;
   const payload = {};
   if (title !== undefined) payload.title = title || null;
   if (description !== undefined) payload.description = description || null;
@@ -360,6 +381,12 @@ exports.updateService = catchAsync(async (req, res, next) => {
   if (active !== undefined)
     payload.active =
       active === true || active === 'true' || active === '1' || active === 1;
+  if (featured !== undefined)
+    payload.featured =
+      featured === true ||
+      featured === 'true' ||
+      featured === '1' ||
+      featured === 1;
   if (order_index !== undefined) {
     const oi = Number(order_index);
     if (!Number.isNaN(oi)) payload.order_index = oi;
@@ -402,7 +429,7 @@ exports.updateSkill = catchAsync(async (req, res, next) => {
   if (existing.user_id !== req.user.id)
     return next(new AppError('Forbidden', 403));
 
-  const { name, category, proficiency, order_index } = req.body;
+  const { name, category, proficiency, featured, order_index } = req.body;
   const payload = {};
   if (name !== undefined) {
     if (!name || String(name).trim() === '')
@@ -416,6 +443,12 @@ exports.updateSkill = catchAsync(async (req, res, next) => {
       return next(new AppError('Proficiency must be integer 0..100', 400));
     payload.proficiency = p;
   }
+  if (featured !== undefined)
+    payload.featured =
+      featured === true ||
+      featured === 'true' ||
+      featured === '1' ||
+      featured === 1;
   if (order_index !== undefined) {
     const oi = Number(order_index);
     if (Number.isNaN(oi))

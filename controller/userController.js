@@ -283,7 +283,8 @@ exports.experience = catchAsync(async (req, res, next) => {
 
   const experienceData = {
     user_id: req.user.id,
-    position
+    position,
+    featured: true
   };
 
   // Add optional fields if provided
@@ -462,7 +463,8 @@ exports.blogs = catchAsync(async (req, res, next) => {
     author: author || null,
     tags: tagsArr,
     published: isPublished || false,
-    published_at: published_at || null
+    published_at: published_at || null,
+    featured: true
   };
 
   if (coverImageUrl) payload.cover_image = coverImageUrl;
@@ -652,7 +654,11 @@ exports.services = catchAsync(async (req, res, next) => {
     active:
       active === undefined
         ? true
-        : active === true || active === 'true' || active === '1' || active === 1
+        : active === true ||
+          active === 'true' ||
+          active === '1' ||
+          active === 1,
+    featured: true
   };
 
   if (order_index !== undefined) {
@@ -718,7 +724,8 @@ exports.skills = catchAsync(async (req, res, next) => {
   const payload = {
     user_id: userId,
     name: String(name).trim(),
-    category: category || null
+    category: category || null,
+    featured: true
   };
 
   if (profValue !== null) payload.proficiency = profValue;
@@ -942,13 +949,15 @@ exports.getPublicPortfolio = catchAsync(async (req, res, next) => {
   const { data: blogsData } = await supabase
     .from('blogs')
     .select('*')
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .eq('featured', true);
   results.blogs = blogsData || [];
 
   const { data: expData } = await supabase
     .from('experience')
     .select('*')
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .eq('featured', true);
   results.experience = expData || [];
 
   const { data: projectsData } = await supabase
@@ -960,13 +969,15 @@ exports.getPublicPortfolio = catchAsync(async (req, res, next) => {
   const { data: servicesData } = await supabase
     .from('services')
     .select('*')
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .eq('featured', true);
   results.services = servicesData || [];
 
   const { data: skillsData } = await supabase
     .from('skills')
     .select('*')
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .eq('featured', true);
   results.skills = skillsData || [];
 
   const cleaned = removeNulls(results);
@@ -1096,11 +1107,6 @@ exports.getPortfolioByUserId = catchAsync(async (req, res, next) => {
     .eq('id', userId)
     .single();
 
-  if (userError) {
-    console.error('User query error:', userError);
-  }
-  console.log('User query result:', user);
-
   if (userError || !user) {
     return next(
       new AppError(
@@ -1131,26 +1137,31 @@ exports.getPortfolioByUserId = catchAsync(async (req, res, next) => {
       .from('blogs')
       .select('*')
       .eq('user_id', userId)
+      .eq('featured', true)
       .order('created_at', { ascending: false }),
     supabase
       .from('experience')
       .select('*')
       .eq('user_id', userId)
+      .eq('featured', true)
       .order('start_date', { ascending: false }),
     supabase
       .from('projects')
       .select('*')
       .eq('user_id', userId)
+      .eq('featured', true)
       .order('order_index', { ascending: true }),
     supabase
       .from('services')
       .select('*')
       .eq('user_id', userId)
+      .eq('featured', true)
       .order('order_index', { ascending: true }),
     supabase
       .from('skills')
       .select('*')
       .eq('user_id', userId)
+      .eq('featured', true)
       .order('order_index', { ascending: true })
   ]);
 
